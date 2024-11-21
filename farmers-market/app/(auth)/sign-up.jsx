@@ -1,12 +1,24 @@
 import { useState } from "react";
 import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Dimensions,
+  Alert,
+  Image,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
 
 import { images } from "../../constants";
-import { createUser } from "../../lib/appwrite";
 import { CustomButton, FormField } from "../../components";
 import { useGlobalContext } from "../../context/GlobalProvider";
+
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
+
+const SERVER_URL = "http://10.101.29.54:8000"; // Replace with your actual server URL
 
 const SignUp = () => {
   const { setUser, setIsLogged } = useGlobalContext();
@@ -16,22 +28,62 @@ const SignUp = () => {
     username: "",
     email: "",
     password: "",
+    password2: "",
+    role: "",
   });
 
   const submit = async () => {
-    if (form.username === "" || form.email === "" || form.password === "") {
+    const { username, email, password, password2, role } = form;
+
+    if (!username || !email || !password || !password2 || !role) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (password !== password2) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
     }
 
     setSubmitting(true);
     try {
-      const result = await createUser(form.email, form.password, form.username);
-      setUser(result);
-      setIsLogged(true);
+      const response = await axios.post(
+        `${SERVER_URL}/api/users/register/`,
+        {
+          username,
+          email,
+          password,
+          password2,
+          role,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 10000,
+        }
+      );
 
-      router.replace("/home");
+      if (response.status === 201) {
+        const result = response.data;
+        // Assuming the response includes access token, refresh token, and user data
+        await SecureStore.setItemAsync("accessToken", result.access);
+        await SecureStore.setItemAsync("refreshToken", result.refresh);
+
+        // Store user information
+        setUser(result.user);
+        setIsLogged(true);
+
+        router.replace("/home");
+      } else {
+        Alert.alert("Error", "Failed to create user");
+      }
     } catch (error) {
-      Alert.alert("Error", error.message);
+      console.error(error);
+      const errorMessage =
+        error.response?.data?.detail ||
+        "An error occurred during registration. Please try again.";
+      Alert.alert("Error", errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -76,7 +128,41 @@ const SignUp = () => {
             value={form.password}
             handleChangeText={(e) => setForm({ ...form, password: e })}
             otherStyles="mt-7"
+            secureTextEntry={true}
           />
+
+          <FormField
+            title="Confirm Password"
+            value={form.password2}
+            handleChangeText={(e) => setForm({ ...form, password2: e })}
+            otherStyles="mt-7"
+            secureTextEntry={true}
+          />
+
+          <View className="mt-7">
+            <Text className="text-white text-lg mb-2">Role</Text>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 5,
+                overflow: "hidden",
+              }}
+            >
+              <Picker
+                selectedValue={form.role}
+                style={{ height: 50, color: "white" }}
+                onValueChange={(itemValue) =>
+                  setForm({ ...form, role: itemValue })
+                }
+                dropdownIconColor="white"
+              >
+                <Picker.Item label="Select a role" value="" color="#888" />
+                <Picker.Item label="Farmer" value="farmer" />
+                <Picker.Item label="Buyer" value="buyer" />
+              </Picker>
+            </View>
+          </View>
 
           <CustomButton
             title="Sign Up"

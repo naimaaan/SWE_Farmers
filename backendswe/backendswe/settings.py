@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-!&pn3$6lc@&0g&77%k5i_y063zu+hpcq1=$+)j+6r)f_)1%!t7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.101.29.54']
 
 
 # Application definition
@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+   # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -70,6 +70,11 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', # frontend app's URL (react)
     'http://localhost:8000',  # backend app's URL (django)
+    'http://192.168.160.18:19006',
+    'http://localhost:19006',
+    #'http://localhost:8081'
+    #'exp://172.20.10.5:8081'
+    #'exp://localhost:8081'
 ]
 
 ROOT_URLCONF = 'backendswe.urls'
@@ -105,7 +110,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'farming_market_db'),
         'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '888yfkjub'),
+        'PASSWORD': os.getenv('DB_PASSWORD', '<1725>'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
