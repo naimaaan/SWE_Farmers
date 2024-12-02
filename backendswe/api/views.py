@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView 
 from rest_framework.permissions import IsAdminUser 
 from .serializers import CustomTokenObtainPairSerializer  # Added import
-from .permissions import IsFarmer, IsBuyer
+from users.permissions import IsFarmer, IsBuyer
 
 
 class CustomTokenObtainPairView(TokenObtainPairView): 

@@ -1,6 +1,13 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -19,12 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!&pn3$6lc@&0g&77%k5i_y063zu+hpcq1=$+)j+6r)f_)1%!t7'
+#SECRET_KEY = 'django-insecure-!&pn3$6lc@&0g&77%k5i_y063zu+hpcq1=$+)j+6r)f_)1%!t7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.101.29.54']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -36,13 +43,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+#    'django_extensions',
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     'api',
     'corsheaders',
     'users',
     'products',
+    'orders',
     'notifications',
-    'drf_yasg',
 ]   
 
 REST_FRAMEWORK = {
@@ -55,13 +65,18 @@ REST_FRAMEWORK = {
     ),
 }
 
+AUTH_USER_MODEL = 'users.CustomUser'  # Replace 'yourapp' with the app name where `CustomUser` is defined
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-   # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -70,11 +85,6 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', # frontend app's URL (react)
     'http://localhost:8000',  # backend app's URL (django)
-    'http://192.168.160.18:19006',
-    'http://localhost:19006',
-    #'http://localhost:8081'
-    #'exp://172.20.10.5:8081'
-    #'exp://localhost:8081'
 ]
 
 ROOT_URLCONF = 'backendswe.urls'
@@ -94,7 +104,6 @@ TEMPLATES = [
         },
     },
 ]
-
 
 
 

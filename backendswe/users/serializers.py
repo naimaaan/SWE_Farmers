@@ -46,16 +46,27 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'phone_number']
 
 class FarmerProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-
     class Meta:
         model = FarmerProfile
-        fields = ['id', 'user', 'farm_size', 'location', 'is_approved', 'rejection_reason']
-        read_only_fields = ['id', 'is_approved']
+        fields = ['user', 'farm_size', 'location', 'is_approved', 'rejection_reason']
+        extra_kwargs = {
+            'user': {'read_only': True},
+            'is_approved': {'read_only': True},
+            'rejection_reason': {'read_only': True},
+        }
+
+    def create(self, validated_data):
+        user = self.context['request'].user  # Get the authenticated user
+        return FarmerProfile.objects.create(user=user, **validated_data)
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
     class Meta:
         model = BuyerProfile
-        fields = ['id', 'user', 'delivery_address']
+        fields = ['delivery_address']
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if BuyerProfile.objects.filter(user=user).exists():
+            raise serializers.ValidationError("Buyer profile already exists for this user.")
+        return data
+        

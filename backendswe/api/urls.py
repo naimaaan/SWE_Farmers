@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/users/', UsersListView.as_view()),
     path('admin/update-user-status/', UpdateUserStatusView.as_view()),
     path('', include(router.urls)),  # Includes all router-based endpoints
+    path('orders/', include('orders.urls')),  # Include the orders app URLs
 ]

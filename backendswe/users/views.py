@@ -5,6 +5,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated 
+from users.permissions import IsFarmer, IsBuyer
 from .models import CustomUser, FarmerProfile, BuyerProfile
 from .serializers import BuyerProfileSerializer, UserSerializer, FarmerProfileSerializer, RegisterSerializer, ProfileSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -12,20 +13,53 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny
 import logging
+from .permissions import IsAdmin
 
 logger = logging.getLogger(__name__)
 
+class ProtectedView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        return Response({"message": "You have accessed a protected endpoint!"})
+
+
+class LoginAPIView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        logger.debug(f"Login attempt: {email}")
+
+        user = authenticate(username=email, password=password)
+        if user:
+            logger.debug(f"Authenticated user: {user.email}")
+            # Check if user is inactive or disabled
+            if not user.is_active:
+                return Response({"error": "User is inactive."}, status=status.HTTP_403_FORBIDDEN)
+            if user.is_disabled:
+                return Response({"error": "Your account is disabled."}, status=status.HTTP_403_FORBIDDEN)
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "role": user.role,
+            }, status=status.HTTP_200_OK)
+
+        logger.debug("Authentication failed.")
+        return Response({"error": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        logger.info(f"Incoming registration data: {request.data}")
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
-            logger.info(f"New user registered: {user.username}")
+            logger.info(f"New user registered: {user.email}")
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -33,20 +67,56 @@ class RegisterView(APIView):
         logger.warning(f"Registration failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(APIView):
-    permission_classes = [AllowAny]  # Allow unauthenticated access
 
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_200_OK)
-        return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+class AdminDashboardView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]  # Restrict to authenticated admins
+
+    def get(self, request):
+        total_users = CustomUser.objects.count()
+        total_farmers = FarmerProfile.objects.count()
+        total_buyers = BuyerProfile.objects.count()
+        pending_farmers = FarmerProfile.objects.filter(is_approved=False).count()
+
+        return Response({
+            "message": "Welcome to the Admin Dashboard!",
+            "statistics": {
+                "total_users": total_users,
+                "total_farmers": total_farmers,
+                "total_buyers": total_buyers,
+                "pending_farmer_approvals": pending_farmers,
+            },
+        })
+
+class BuyerDashboardView(APIView):
+    permission_classes = [IsAuthenticated, IsBuyer]  # Restrict to authenticated buyers
+
+    def get(self, request):
+        buyer_profile = request.user.buyer_profile  # Assuming the related_name="buyer_profile" is set
+        return Response({
+            "message": "Welcome to the Buyer Dashboard!",
+            "buyer_details": {
+                "email": request.user.email,
+                "delivery_address": buyer_profile.delivery_address,
+            },
+            # Add order history if available
+            # "order_history": [{"order_id": 1, "items": ["item1", "item2"]}, ...],
+        })
+
+class FarmerDashboardView(APIView):
+    permission_classes = [IsAuthenticated, IsFarmer]  # Restrict to authenticated farmers
+
+    def get(self, request):
+        farmer_profile = request.user.farmer_profile  # Assuming the related_name="farmer_profile" is set
+        return Response({
+            "message": "Welcome to the Farmer Dashboard!",
+            "farmer_details": {
+                "email": request.user.email,
+                "farm_size": farmer_profile.farm_size,
+                "location": farmer_profile.location,
+                "is_approved": farmer_profile.is_approved,
+                "rejection_reason": farmer_profile.rejection_reason if not farmer_profile.is_approved else None,
+            },
+        })
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -136,14 +206,44 @@ class CreateBuyerProfileView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this view
 
     def post(self, request):
-        serializer = BuyerProfileSerializer(data=request.data, context={'request': request})
+        # Automatically link the authenticated user
+        data = request.data.copy()
+        data['user'] = request.user.id  # Set user field based on the authenticated user
+        serializer = BuyerProfileSerializer(data=data, context={'request': request})
+        
         if serializer.is_valid():
             buyer_profile = serializer.save()
             return Response({
                 'status': 'Buyer profile created successfully',
                 'buyer_profile': BuyerProfileSerializer(buyer_profile).data
             }, status=status.HTTP_201_CREATED)
+        
         return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+class CreateFarmerProfileView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this view
+
+    def post(self, request, *args, **kwargs):
+        # Automatically link the authenticated user
+        user = request.user
+        if FarmerProfile.objects.filter(user=user).exists():
+            return Response(
+                {"error": "Farmer profile already exists for this user."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = FarmerProfileSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            farmer_profile = serializer.save()
+            return Response(
+                {
+                    "status": "Farmer profile created successfully",
+                    "farmer_profile": FarmerProfileSerializer(farmer_profile).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UsersListView(APIView): 
     permission_classes = [IsAdminUser] 
