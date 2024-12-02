@@ -70,6 +70,7 @@ class OrdersViewSet(ModelViewSet):
 
         # Reduce product stock
         product.quantity -= int(quantity)
+        product.update_sales_count(int(quantity))  # Increment the sales_count
         product.save()
 
         serializer = self.get_serializer(order)

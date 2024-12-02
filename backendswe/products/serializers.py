@@ -10,9 +10,11 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     # Allow input for farmer as a PrimaryKeyRelatedField
-    farmer = serializers.PrimaryKeyRelatedField(queryset=FarmerProfile.objects.all())
+    farmer = FarmerProfileSerializer(read_only=True)  # Include FarmerProfileSerializer
     images = ProductImageSerializer(many=True, read_only=True)  # Nested serializer for images
-
+    location = serializers.ReadOnlyField(source='farmer.location')
+    
+    
     class Meta:
         model = Product
         fields = '__all__'

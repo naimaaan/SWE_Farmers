@@ -1,7 +1,7 @@
 // src/types/Product.ts
 export interface Product {
     id: number;
-    farmer: number;
+    farmer: string;
     images: {
       id: number;
       image_url: string;

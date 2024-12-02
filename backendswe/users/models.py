@@ -6,6 +6,7 @@ class CustomUserManager(BaseUserManager):
     """
     Custom manager for CustomUser model, using email as the unique identifier.
     """
+    farmer_profile = models.OneToOneField('FarmerProfile', on_delete=models.CASCADE, related_name='farmer', null=True, blank=True)
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -44,7 +45,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(max_length=255, unique=True)  # Use email as the primary identifier
 
     # Set email as the unique identifier for authentication
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []  # No additional fields are required
 
     # Assign the custom user manager

@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.160.18','10.101.29.54']
 
 
 # Application definition
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
 #    'django_extensions',
     'rest_framework',
     'rest_framework.authtoken',
-    'rest_framework_simplejwt',
+    # 'rest_framework_simplejwt',
     'api',
     'corsheaders',
     'users',
@@ -76,7 +76,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -85,6 +85,9 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000', # frontend app's URL (react)
     'http://localhost:8000',  # backend app's URL (django)
+    'http://192.168.160.18:8000',
+    'http://localhost:19006',
+
 ]
 
 ROOT_URLCONF = 'backendswe.urls'
