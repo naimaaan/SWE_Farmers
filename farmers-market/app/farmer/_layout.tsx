@@ -26,6 +26,7 @@ export default function FarmerLayout() {
         }),
       }}
     >
+      {/* Dashboard tab: Displays the farmer's dashboard with stock and notifications */}
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -33,6 +34,8 @@ export default function FarmerLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="tray.fill" color={color} />,
         }}
       />
+
+      {/* Add Product tab: Farmers can add new products (with fields like name, category, price, etc.) */}
       <Tabs.Screen
         name="addProduct"
         options={{
@@ -40,11 +43,22 @@ export default function FarmerLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.app.fill" color={color} />,
         }}
       />
+
+      {/* Manage Products tab: Farmers can update, delete, and manage existing products */}
       <Tabs.Screen
         name="manageProducts"
         options={{
           title: 'Manage Products',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="pencil.and.outline" color={color} />,
+        }}
+      />
+
+      {/* Low Stock Notifications tab: A place for notifications about products that need restocking */}
+      <Tabs.Screen
+        name="lowStockNotifications"
+        options={{
+          title: 'Low Stock',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="exclamationmark.triangle.fill" color={color} />,
         }}
       />
     </Tabs>

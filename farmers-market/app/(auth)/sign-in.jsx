@@ -11,7 +11,7 @@ import { useGlobalContext } from "../../context/GlobalProvider";
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
 
-const SERVER_IP = '10.101.29.54:8000'; // Replace with your actual IP address
+const SERVER_IP = '192.168.160.18:8000'; // Replace with your actual IP address
 
 const SignIn = () => {
   const { setUser, setIsLogged } = useGlobalContext();
@@ -32,7 +32,7 @@ const SignIn = () => {
     try {
       // Make an API call to your Django server's login endpoint
       const response = await axios.post(
-        `http://${SERVER_IP}/api/login/`,
+        `http://${SERVER_IP}/api/login/`, // Adjusted to your token endpoint
         {
           username: form.username,
           password: form.password,
@@ -46,19 +46,20 @@ const SignIn = () => {
       );
 
       if (response.status === 200) {
-        const result = response.data;
-        // Assuming the response includes an access token
-        const { access, refresh, user } = result;
+        const { access, refresh, user } = response.data;
 
-        // Store tokens securely
+        // Store tokens securely in SecureStore
         await SecureStore.setItemAsync('accessToken', access);
         await SecureStore.setItemAsync('refreshToken', refresh);
 
-        // Store user information
+        // Store user information (e.g., username, email, etc.)
         setUser(user);
         setIsLogged(true);
 
+        // Show success message
         Alert.alert("Success", "User signed in successfully");
+
+        // Redirect to the home page or desired screen
         router.replace("/home");
       } else {
         Alert.alert("Error", "Failed to sign in");
